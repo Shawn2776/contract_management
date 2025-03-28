@@ -12,9 +12,6 @@ import Image from "next/image";
 export default function Home() {
   return (
     <div className="flex flex-col w-full h-full">
-      <div className="w-full bg-blue-900">
-        <Navbar />
-      </div>
       <main className="max-w-sm mx-auto mt-40">
         <Card>
           <CardHeader>
