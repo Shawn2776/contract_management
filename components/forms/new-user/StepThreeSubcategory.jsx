@@ -70,7 +70,7 @@ export default function StepThreeSubcategory() {
       return;
     }
 
-    const res = await fetch("/api/new-user/validate/subcategory", {
+    const res = await fetch("/api/validate-subcategory", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ businessSubcategory: value }),

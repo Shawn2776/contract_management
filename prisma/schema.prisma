@@ -1,0 +1,236 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Invoice {
+  id             Int              @id @default(autoincrement())
+  amount         Decimal          @db.Decimal(10, 2)
+  status         String           @db.VarChar(50)
+  customerId     Int
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  createdById    String
+  updatedById    String
+  createdBy      User             @relation("CreatedInvoices", fields: [createdById], references: [id])
+  updatedBy      User             @relation("UpdatedInvoices", fields: [updatedById], references: [id])
+  customer       Customer         @relation(fields: [customerId], references: [id])
+  InvoiceDetail  InvoiceDetail[]
+  ShippingDetail ShippingDetail[]
+  Payment        Payment[]
+}
+
+model Product {
+  id            Int             @id @default(autoincrement())
+  name          String          @db.VarChar(100)
+  price         Decimal         @db.Decimal(10, 2)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  createdById   String
+  updatedById   String
+  createdBy     User            @relation("CreatedProducts", fields: [createdById], references: [id])
+  updatedBy     User            @relation("UpdatedProducts", fields: [updatedById], references: [id])
+  InvoiceDetail InvoiceDetail[]
+}
+
+model Tenant {
+  id          String             @id @default(cuid())
+  name        String
+  createdAt   DateTime           @default(now())
+  memberships TenantMembership[]
+  businesses  Business[]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  clerkId   String   @unique
+  name      String?
+  role      Role     @default(SUPPORT)
+  createdAt DateTime @default(now())
+
+  memberships TenantMembership[]
+
+  createdBusinesses Business[]       @relation("CreatedBusinesses")
+  updatedBusinesses Business[]       @relation("UpdatedBusinesses")
+  createdProducts   Product[]        @relation("CreatedProducts")
+  updatedProducts   Product[]        @relation("UpdatedProducts")
+  createdInvoices   Invoice[]        @relation("CreatedInvoices")
+  updatedInvoices   Invoice[]        @relation("UpdatedInvoices")
+  createdCustomers  Customer[]       @relation("CreatedCustomers")
+  updatedCustomers  Customer[]       @relation("UpdatedCustomers")
+  createdDiscounts  Discount[]       @relation("CreatedDiscounts")
+  updatedDiscounts  Discount[]       @relation("UpdatedDiscounts")
+  createdTaxRates   TaxRate[]        @relation("CreatedTaxRates")
+  updatedTaxRates   TaxRate[]        @relation("UpdatedTaxRates")
+  createdShipping   ShippingDetail[] @relation("CreatedShipping")
+  updatedShipping   ShippingDetail[] @relation("UpdatedShipping")
+  createdPayments   Payment[]        @relation("CreatedPayments")
+  updatedPayments   Payment[]        @relation("UpdatedPayments")
+  auditLogs         AuditLog[]
+}
+
+model Business {
+  id                  String   @id @default(cuid())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  tenantId            String
+  tenant              Tenant   @relation(fields: [tenantId], references: [id])
+  createdById         String
+  createdBy           User     @relation("CreatedBusinesses", fields: [createdById], references: [id])
+  updatedById         String
+  updatedBy           User     @relation("UpdatedBusinesses", fields: [updatedById], references: [id])
+  businessType        String
+  businessCategory    String
+  businessSubcategory String
+  legalBusinessName   String
+  doingBusinessAs     String?
+  ein                 String
+  businessState       String
+  onlineStatus        String
+  onlineLink          String?
+}
+
+model TenantMembership {
+  id       String     @id @default(cuid())
+  tenantId String
+  userId   String
+  role     TenantRole
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([tenantId, userId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String // CREATE, UPDATE, DELETE
+  table     String // e.g. Product
+  recordId  String
+  data      Json?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  SUPER_ADMIN
+  SUPPORT
+  DEVELOPER
+}
+
+enum TenantRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model BankDetail {
+  id            Int    @id @default(autoincrement())
+  bankName      String @db.VarChar(100)
+  accountNumber String @db.VarChar(50)
+  iban          String @db.VarChar(50)
+  bic           String @db.VarChar(50)
+}
+
+model Customer {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(100)
+  email       String    @db.VarChar(100)
+  phone       String    @db.VarChar(15)
+  address     String    @db.VarChar(255)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdById String
+  updatedById String
+  createdBy   User      @relation("CreatedCustomers", fields: [createdById], references: [id])
+  updatedBy   User      @relation("UpdatedCustomers", fields: [updatedById], references: [id])
+  Invoice     Invoice[]
+}
+
+model Discount {
+  id            Int             @id @default(autoincrement())
+  name          String          @db.VarChar(50)
+  discountValue Decimal         @db.Decimal(5, 2)
+  createdById   String
+  updatedById   String
+  createdBy     User            @relation("CreatedDiscounts", fields: [createdById], references: [id])
+  updatedBy     User            @relation("UpdatedDiscounts", fields: [updatedById], references: [id])
+  InvoiceDetail InvoiceDetail[]
+}
+
+model ShippingDetail {
+  id               Int      @id @default(autoincrement())
+  invoiceId        Int
+  address          String   @db.VarChar(255)
+  shippingDate     DateTime
+  estimatedArrival DateTime
+  createdById      String
+  updatedById      String
+  createdBy        User     @relation("CreatedShipping", fields: [createdById], references: [id])
+  updatedBy        User     @relation("UpdatedShipping", fields: [updatedById], references: [id])
+  Invoice          Invoice  @relation(fields: [invoiceId], references: [id])
+}
+
+model TaxRate {
+  id            Int             @id @default(autoincrement())
+  name          String          @db.VarChar(50)
+  rate          Decimal         @db.Decimal(5, 2)
+  createdById   String
+  updatedById   String
+  createdBy     User            @relation("CreatedTaxRates", fields: [createdById], references: [id])
+  updatedBy     User            @relation("UpdatedTaxRates", fields: [updatedById], references: [id])
+  InvoiceDetail InvoiceDetail[]
+}
+
+model InvoiceDetail {
+  id         Int       @id @default(autoincrement())
+  invoiceId  Int
+  productId  Int
+  quantity   Int
+  taxId      Int?
+  discountId Int?
+  lineTotal  Decimal   @db.Decimal(10, 2)
+  Discount   Discount? @relation(fields: [discountId], references: [id])
+  Invoice    Invoice   @relation(fields: [invoiceId], references: [id])
+  Product    Product   @relation(fields: [productId], references: [id])
+  TaxRate    TaxRate?  @relation(fields: [taxId], references: [id])
+}
+
+model Payment {
+  id          Int      @id @default(autoincrement())
+  invoiceId   Int
+  amount      Decimal  @db.Decimal(10, 2)
+  date        DateTime
+  method      String   @db.VarChar(50)
+  status      String   @db.VarChar(50)
+  reference   String?  @db.VarChar(255)
+  createdById String
+  updatedById String
+  createdBy   User     @relation("CreatedPayments", fields: [createdById], references: [id])
+  updatedBy   User     @relation("UpdatedPayments", fields: [updatedById], references: [id])
+  Invoice     Invoice  @relation(fields: [invoiceId], references: [id])
+}
+
+model PaymentLog {
+  id         Int      @id @default(autoincrement())
+  timestamp  DateTime @default(now())
+  logMessage String   @db.VarChar(255)
+}
+
+model PaymentMethod {
+  id          Int     @id @default(autoincrement())
+  name        String  @db.VarChar(50)
+  description String?
+}
+
+model PaymentStatus {
+  id          Int     @id @default(autoincrement())
+  name        String  @db.VarChar(50)
+  description String?
+}

@@ -42,6 +42,13 @@ const StepFourBusinessDetails = () => {
     router.push(`/new-user/${step - 1}`);
   };
 
+  const normalizeName = (name) =>
+    name
+      .normalize("NFC")
+      .toLowerCase()
+      .trim()
+      .replace(/[\s\u00A0\-.,]+/g, "");
+
   const verifyBusiness = async () => {
     if (!legalBusinessName.trim() || !selectedState) {
       setMessage("Please enter a business name and select a state.");

@@ -9,4 +9,5 @@ export const useMultiStepForm = create((set) => ({
   prevStep: () => set((state) => ({ step: state.step - 1 })),
   setFormData: (newData) =>
     set((state) => ({ data: { ...state.data, ...newData } })),
+  resetForm: () => set({ step: 1, data: {} }),
 }));

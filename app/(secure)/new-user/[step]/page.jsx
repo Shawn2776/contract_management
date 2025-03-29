@@ -2,9 +2,10 @@
 
 import FormHeader from "@/components/forms/new-user/FormHeader";
 import NewUserFormPageOne from "@/components/forms/new-user/StepOneBusinessType";
-import NewUserFormPageFour from "@/components/forms/new-user/StepFourBusinessDetails";
 import NewUserFormPageTwo from "@/components/forms/new-user/StepTwoCategory";
 import NewUserFormPageThree from "@/components/forms/new-user/StepThreeSubcategory";
+import NewUserFormPageFour from "@/components/forms/new-user/StepFourBusinessDetails";
+import NewUserFormPageFive from "@/components/forms/new-user/StepFiveReviewSubmit";
 import { useMultiStepForm } from "@/stores/useMultiStepForm";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -60,6 +61,13 @@ const NewUserPage = () => {
               p="Detialed business information"
             />
             <NewUserFormPageFour />
+          </>
+        );
+      case 5:
+        return (
+          <>
+            <FormHeader h2="Business Summary" p="Review and Submit" />
+            <NewUserFormPageFive />
           </>
         );
       default:
