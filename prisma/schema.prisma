@@ -28,13 +28,18 @@ model Product {
   id            Int             @id @default(autoincrement())
   name          String          @db.VarChar(100)
   price         Decimal         @db.Decimal(10, 2)
+  description   String?
+  tenantId      String
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   createdById   String
   updatedById   String
+  tenant        Tenant          @relation(fields: [tenantId], references: [id])
   createdBy     User            @relation("CreatedProducts", fields: [createdById], references: [id])
   updatedBy     User            @relation("UpdatedProducts", fields: [updatedById], references: [id])
   InvoiceDetail InvoiceDetail[]
+
+  @@index([tenantId])
 }
 
 model Tenant {
@@ -43,6 +48,9 @@ model Tenant {
   createdAt   DateTime           @default(now())
   memberships TenantMembership[]
   businesses  Business[]
+  products    Product[]
+
+  Customer Customer[]
 }
 
 model User {
@@ -139,11 +147,15 @@ model BankDetail {
 }
 
 model Customer {
-  id          Int       @id @default(autoincrement())
-  name        String    @db.VarChar(100)
-  email       String    @db.VarChar(100)
-  phone       String    @db.VarChar(15)
-  address     String    @db.VarChar(255)
+  id       Int    @id @default(autoincrement())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  name    String @db.VarChar(100)
+  email   String @db.VarChar(100)
+  phone   String @db.VarChar(15)
+  address String @db.VarChar(255)
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   createdById String
@@ -151,6 +163,8 @@ model Customer {
   createdBy   User      @relation("CreatedCustomers", fields: [createdById], references: [id])
   updatedBy   User      @relation("UpdatedCustomers", fields: [updatedById], references: [id])
   Invoice     Invoice[]
+
+  @@unique([tenantId, email])
 }
 
 model Discount {

@@ -45,8 +45,6 @@ async function main() {
       onlineLink: "https://example.com",
     },
   });
-
-  console.log("✅ Seed completed!");
 }
 
 main()

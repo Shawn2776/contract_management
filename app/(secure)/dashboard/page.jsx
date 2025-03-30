@@ -79,7 +79,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
         <StatCard
           label="Total Revenue"
-          value={`$${stats.revenue.toFixed(2)}`}
+          value={`$${Number(stats.revenue || 0).toFixed(2)}`}
         />
         <StatCard label="Products" value={stats.products} />
         <StatCard label="Invoices" value={stats.invoices} />
