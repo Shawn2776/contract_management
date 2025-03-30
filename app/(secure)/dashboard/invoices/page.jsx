@@ -14,7 +14,6 @@ export default function InvoicesPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <h1 className="text-3xl font-bold">Invoices</h1>
       <div className="grid gap-4">
         {invoices.map((invoice) => (
           <Card key={invoice.id}>

@@ -14,7 +14,6 @@ export default function ProductsPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <h1 className="text-3xl font-bold">Products</h1>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {products.map((product) => (
           <Card key={product.id}>

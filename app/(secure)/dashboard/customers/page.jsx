@@ -21,16 +21,21 @@ export default function CustomersPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <h1 className="text-3xl font-bold">Customers</h1>
       <div className="grid grid-cols-2 gap-4">
         {customers.map((customer) => (
-          <Card key={customer.id}>
+          <Card key={customer.id} className="rounded-none shadow-lg">
             <CardHeader>
               <CardTitle>{customer.name}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p>Email: {customer.email}</p>
-              <p>Phone: {formatPhone(customer.phone)}</p>
+              <p>
+                <span className="font-bold">Email:</span>
+                <span>{customer.email}</span>
+              </p>
+              <p>
+                <span className="font-bold">Phone:</span>
+                <span>{formatPhone(customer.phone)}</span>
+              </p>
             </CardContent>
           </Card>
         ))}
