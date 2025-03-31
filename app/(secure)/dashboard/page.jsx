@@ -27,7 +27,7 @@ export default function DashboardPage() {
   if (!isLoaded) return <div>Loading...</div>;
 
   return (
-    <>
+    <div className="flex w-full justify-evenly gap-2">
       <StatCard
         label="Total Revenue"
         value={`$${Number(stats.revenue || 0).toFixed(2)}`}
@@ -35,6 +35,6 @@ export default function DashboardPage() {
       <StatCard label="Products" value={stats.products} />
       <StatCard label="Invoices" value={stats.invoices} />
       <StatCard label="Customers" value={stats.customers} />
-    </>
+    </div>
   );
 }

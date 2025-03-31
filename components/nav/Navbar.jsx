@@ -23,7 +23,7 @@ import {
   UserButton,
 } from "@clerk/nextjs";
 import React from "react";
-import { ModeToggle } from "./theme/ModeToggle";
+import { ModeToggle } from "../theme/ModeToggle";
 
 const Navbar = () => {
   const { user, isLoaded } = useUser();
@@ -57,7 +57,7 @@ const Navbar = () => {
       )} */}
       <div>&nbsp;</div>
 
-      <div className="hidden md:flex text-4xl font-bold">{pathTitle}</div>
+      {/* <div className="hidden md:flex text-4xl font-bold">{pathTitle}</div> */}
       <div>
         <div className="flex gap-2 pr-5">
           {user?.publicMetadata?.role === "OWNER" ||

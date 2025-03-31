@@ -16,7 +16,7 @@ export default function InvoicesPage() {
     <div className="p-6 space-y-4">
       <div className="grid gap-4">
         {invoices.map((invoice) => (
-          <Card key={invoice.id}>
+          <Card key={invoice.id} className="rounded-none shadow-md">
             <CardHeader>
               <CardTitle>Invoice #{invoice.id}</CardTitle>
             </CardHeader>

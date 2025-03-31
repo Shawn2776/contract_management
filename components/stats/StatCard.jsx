@@ -4,7 +4,7 @@ import Link from "next/link";
 
 const StatCard = ({ label, value }) => {
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="text-sm text-muted-foreground">{label}</CardTitle>
       </CardHeader>

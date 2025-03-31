@@ -1,5 +1,5 @@
 // import ProgressBar from "@/components/forms/new-user/ProgressBar";
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/nav/Navbar";
 // import { FormProvider } from "@/contexts/FormContext";
 import React from "react";
 
