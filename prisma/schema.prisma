@@ -8,7 +8,8 @@ datasource db {
 }
 
 model Invoice {
-  id             Int              @id @default(autoincrement())
+  id             String           @id @default(cuid())
+  number         String?
   amount         Decimal          @db.Decimal(10, 2)
   status         String           @db.VarChar(50)
   customerId     Int
@@ -16,70 +17,86 @@ model Invoice {
   updatedAt      DateTime         @updatedAt
   createdById    String
   updatedById    String
+  deleted        Boolean          @default(false)
   createdBy      User             @relation("CreatedInvoices", fields: [createdById], references: [id])
-  updatedBy      User             @relation("UpdatedInvoices", fields: [updatedById], references: [id])
   customer       Customer         @relation(fields: [customerId], references: [id])
+  updatedBy      User             @relation("UpdatedInvoices", fields: [updatedById], references: [id])
   InvoiceDetail  InvoiceDetail[]
-  ShippingDetail ShippingDetail[]
   Payment        Payment[]
+  ShippingDetail ShippingDetail[]
+  InvoiceVersion InvoiceVersion[]
 }
 
 model Product {
   id            Int             @id @default(autoincrement())
   name          String          @db.VarChar(100)
   price         Decimal         @db.Decimal(10, 2)
-  description   String?
-  tenantId      String
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   createdById   String
   updatedById   String
-  tenant        Tenant          @relation(fields: [tenantId], references: [id])
-  createdBy     User            @relation("CreatedProducts", fields: [createdById], references: [id])
-  updatedBy     User            @relation("UpdatedProducts", fields: [updatedById], references: [id])
+  description   String?
+  tenantId      String
   InvoiceDetail InvoiceDetail[]
+  createdBy     User            @relation("CreatedProducts", fields: [createdById], references: [id])
+  tenant        Tenant          @relation(fields: [tenantId], references: [id])
+  updatedBy     User            @relation("UpdatedProducts", fields: [updatedById], references: [id])
 
   @@index([tenantId])
 }
 
 model Tenant {
-  id          String             @id @default(cuid())
-  name        String
-  createdAt   DateTime           @default(now())
-  memberships TenantMembership[]
-  businesses  Business[]
-  products    Product[]
+  id              String             @id @default(cuid())
+  name            String
+  createdAt       DateTime           @default(now())
+  invoiceCounter  Int                @default(1)
+  invoiceFormat   String?
+  invoicePrefix   String?
+  isInvoiceSetup  Boolean            @default(false)
+  autoResetYearly Boolean            @default(false)
+  lastResetYear   Int?
+  businesses      Business[]
+  Customer        Customer[]
+  products        Product[]
+  memberships     TenantMembership[]
+}
 
-  Customer Customer[]
+model InvoiceVersion {
+  id         Int      @id @default(autoincrement())
+  invoiceId  String
+  number     String
+  data       Json
+  modifiedAt DateTime @default(now())
+  modifiedBy String
+
+  Invoice Invoice @relation(fields: [invoiceId], references: [id])
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  clerkId   String   @unique
-  name      String?
-  role      Role     @default(SUPPORT)
-  createdAt DateTime @default(now())
-
-  memberships TenantMembership[]
-
-  createdBusinesses Business[]       @relation("CreatedBusinesses")
-  updatedBusinesses Business[]       @relation("UpdatedBusinesses")
-  createdProducts   Product[]        @relation("CreatedProducts")
-  updatedProducts   Product[]        @relation("UpdatedProducts")
-  createdInvoices   Invoice[]        @relation("CreatedInvoices")
-  updatedInvoices   Invoice[]        @relation("UpdatedInvoices")
-  createdCustomers  Customer[]       @relation("CreatedCustomers")
-  updatedCustomers  Customer[]       @relation("UpdatedCustomers")
-  createdDiscounts  Discount[]       @relation("CreatedDiscounts")
-  updatedDiscounts  Discount[]       @relation("UpdatedDiscounts")
-  createdTaxRates   TaxRate[]        @relation("CreatedTaxRates")
-  updatedTaxRates   TaxRate[]        @relation("UpdatedTaxRates")
-  createdShipping   ShippingDetail[] @relation("CreatedShipping")
-  updatedShipping   ShippingDetail[] @relation("UpdatedShipping")
-  createdPayments   Payment[]        @relation("CreatedPayments")
-  updatedPayments   Payment[]        @relation("UpdatedPayments")
+  id                String             @id @default(cuid())
+  email             String             @unique
+  clerkId           String             @unique
+  name              String?
+  role              Role               @default(SUPPORT)
+  createdAt         DateTime           @default(now())
   auditLogs         AuditLog[]
+  createdBusinesses Business[]         @relation("CreatedBusinesses")
+  updatedBusinesses Business[]         @relation("UpdatedBusinesses")
+  createdCustomers  Customer[]         @relation("CreatedCustomers")
+  updatedCustomers  Customer[]         @relation("UpdatedCustomers")
+  createdDiscounts  Discount[]         @relation("CreatedDiscounts")
+  updatedDiscounts  Discount[]         @relation("UpdatedDiscounts")
+  createdInvoices   Invoice[]          @relation("CreatedInvoices")
+  updatedInvoices   Invoice[]          @relation("UpdatedInvoices")
+  createdPayments   Payment[]          @relation("CreatedPayments")
+  updatedPayments   Payment[]          @relation("UpdatedPayments")
+  createdProducts   Product[]          @relation("CreatedProducts")
+  updatedProducts   Product[]          @relation("UpdatedProducts")
+  createdShipping   ShippingDetail[]   @relation("CreatedShipping")
+  updatedShipping   ShippingDetail[]   @relation("UpdatedShipping")
+  createdTaxRates   TaxRate[]          @relation("CreatedTaxRates")
+  updatedTaxRates   TaxRate[]          @relation("UpdatedTaxRates")
+  memberships       TenantMembership[]
 }
 
 model Business {
@@ -87,11 +104,8 @@ model Business {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   tenantId            String
-  tenant              Tenant   @relation(fields: [tenantId], references: [id])
   createdById         String
-  createdBy           User     @relation("CreatedBusinesses", fields: [createdById], references: [id])
   updatedById         String
-  updatedBy           User     @relation("UpdatedBusinesses", fields: [updatedById], references: [id])
   businessType        String
   businessCategory    String
   businessSubcategory String
@@ -101,6 +115,9 @@ model Business {
   businessState       String
   onlineStatus        String
   onlineLink          String?
+  createdBy           User     @relation("CreatedBusinesses", fields: [createdById], references: [id])
+  tenant              Tenant   @relation(fields: [tenantId], references: [id])
+  updatedBy           User     @relation("UpdatedBusinesses", fields: [updatedById], references: [id])
 }
 
 model TenantMembership {
@@ -108,34 +125,21 @@ model TenantMembership {
   tenantId String
   userId   String
   role     TenantRole
-
-  tenant Tenant @relation(fields: [tenantId], references: [id])
-  user   User   @relation(fields: [userId], references: [id])
+  tenant   Tenant     @relation(fields: [tenantId], references: [id])
+  user     User       @relation(fields: [userId], references: [id])
 
   @@unique([tenantId, userId])
 }
 
 model AuditLog {
   id        String   @id @default(cuid())
-  action    String // CREATE, UPDATE, DELETE
-  table     String // e.g. Product
+  action    String
+  table     String
   recordId  String
   data      Json?
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
-}
-
-enum Role {
-  SUPER_ADMIN
-  SUPPORT
-  DEVELOPER
-}
-
-enum TenantRole {
-  OWNER
-  ADMIN
-  MEMBER
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model BankDetail {
@@ -147,20 +151,18 @@ model BankDetail {
 }
 
 model Customer {
-  id       Int    @id @default(autoincrement())
-  tenantId String
-  tenant   Tenant @relation(fields: [tenantId], references: [id])
-
-  name    String @db.VarChar(100)
-  email   String @db.VarChar(100)
-  phone   String @db.VarChar(15)
-  address String @db.VarChar(255)
-
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(100)
+  email       String    @db.VarChar(100)
+  phone       String    @db.VarChar(15)
+  address     String    @db.VarChar(255)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   createdById String
   updatedById String
+  tenantId    String
   createdBy   User      @relation("CreatedCustomers", fields: [createdById], references: [id])
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
   updatedBy   User      @relation("UpdatedCustomers", fields: [updatedById], references: [id])
   Invoice     Invoice[]
 
@@ -180,15 +182,15 @@ model Discount {
 
 model ShippingDetail {
   id               Int      @id @default(autoincrement())
-  invoiceId        Int
+  invoiceId        String
   address          String   @db.VarChar(255)
   shippingDate     DateTime
   estimatedArrival DateTime
   createdById      String
   updatedById      String
   createdBy        User     @relation("CreatedShipping", fields: [createdById], references: [id])
-  updatedBy        User     @relation("UpdatedShipping", fields: [updatedById], references: [id])
   Invoice          Invoice  @relation(fields: [invoiceId], references: [id])
+  updatedBy        User     @relation("UpdatedShipping", fields: [updatedById], references: [id])
 }
 
 model TaxRate {
@@ -197,14 +199,14 @@ model TaxRate {
   rate          Decimal         @db.Decimal(5, 2)
   createdById   String
   updatedById   String
+  InvoiceDetail InvoiceDetail[]
   createdBy     User            @relation("CreatedTaxRates", fields: [createdById], references: [id])
   updatedBy     User            @relation("UpdatedTaxRates", fields: [updatedById], references: [id])
-  InvoiceDetail InvoiceDetail[]
 }
 
 model InvoiceDetail {
   id         Int       @id @default(autoincrement())
-  invoiceId  Int
+  invoiceId  String
   productId  Int
   quantity   Int
   taxId      Int?
@@ -218,7 +220,7 @@ model InvoiceDetail {
 
 model Payment {
   id          Int      @id @default(autoincrement())
-  invoiceId   Int
+  invoiceId   String
   amount      Decimal  @db.Decimal(10, 2)
   date        DateTime
   method      String   @db.VarChar(50)
@@ -227,8 +229,8 @@ model Payment {
   createdById String
   updatedById String
   createdBy   User     @relation("CreatedPayments", fields: [createdById], references: [id])
-  updatedBy   User     @relation("UpdatedPayments", fields: [updatedById], references: [id])
   Invoice     Invoice  @relation(fields: [invoiceId], references: [id])
+  updatedBy   User     @relation("UpdatedPayments", fields: [updatedById], references: [id])
 }
 
 model PaymentLog {
@@ -247,4 +249,16 @@ model PaymentStatus {
   id          Int     @id @default(autoincrement())
   name        String  @db.VarChar(50)
   description String?
+}
+
+enum Role {
+  SUPER_ADMIN
+  SUPPORT
+  DEVELOPER
+}
+
+enum TenantRole {
+  OWNER
+  ADMIN
+  MEMBER
 }

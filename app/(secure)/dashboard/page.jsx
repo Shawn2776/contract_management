@@ -1,11 +1,14 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
+
 import { useEffect, useState } from "react";
 
 import StatCard from "@/components/stats/StatCard";
 
 export default function DashboardPage() {
+  const [data, setData] = useState([]);
+
   const { user, isLoaded } = useUser();
   const [tenant, setTenant] = useState(null);
   const [stats, setStats] = useState({
@@ -27,7 +30,7 @@ export default function DashboardPage() {
   if (!isLoaded) return <div>Loading...</div>;
 
   return (
-    <div className="flex w-full justify-evenly gap-2">
+    <div className="flex-col md:flex-row flex w-full justify-evenly gap-2">
       <StatCard
         label="Total Revenue"
         value={`$${Number(stats.revenue || 0).toFixed(2)}`}

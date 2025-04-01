@@ -15,6 +15,25 @@ const invoiceSchema = z.object({
   ),
 });
 
+async function getUpdatedTenantCounter(tenant) {
+  const currentYear = new Date().getFullYear();
+
+  if (tenant.autoResetYearly && tenant.lastResetYear !== currentYear) {
+    // Reset counter
+    await prisma.tenant.update({
+      where: { id: tenant.id },
+      data: {
+        invoiceCounter: 1,
+        lastResetYear: currentYear,
+      },
+    });
+    tenant.invoiceCounter = 1;
+    tenant.lastResetYear = currentYear;
+  }
+
+  return tenant.invoiceCounter;
+}
+
 export async function GET() {
   const user = await currentUser();
   if (!user) return new Response("Unauthorized", { status: 401 });
@@ -36,6 +55,7 @@ export async function GET() {
           some: { tenantId },
         },
       },
+      deleted: false,
     },
     include: { customer: true },
   });
@@ -62,77 +82,82 @@ export async function POST(req) {
     return new Response("Missing required fields", { status: 400 });
   }
 
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+  tenant.invoiceCounter = await getUpdatedTenantCounter(tenant);
+
+  // 🔹 Generate invoice number
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const counter = String(tenant.invoiceCounter).padStart(4, "0");
+
+  const format = tenant.invoiceFormat || "{prefix}-{counter}";
+  const invoiceNumber = format
+    .replace("{prefix}", tenant.invoicePrefix || "INV")
+    .replace("{year}", year)
+    .replace("{month}", month)
+    .replace("{counter}", counter);
+
   const details = await Promise.all(
     lineItems.map(async (item) => {
       const product = await prisma.product.findUnique({
-        where: { id: parseInt(item.productId) },
+        where: { id: item.productId },
       });
 
-      if (!product) {
-        throw new Error(`Product not found: ${item.productId}`);
-      }
+      if (!product) throw new Error("Product not found");
 
       let lineTotal = product.price * item.quantity;
 
       if (item.discountId) {
         const discount = await prisma.discount.findUnique({
-          where: { id: parseInt(item.discountId) },
+          where: { id: item.discountId },
         });
         if (discount) {
-          lineTotal = lineTotal * ((100 - discount.discountValue) / 100);
+          lineTotal *= (100 - discount.discountValue) / 100;
         }
       }
 
       if (item.taxId) {
         const tax = await prisma.taxRate.findUnique({
-          where: { id: parseInt(item.taxId) },
+          where: { id: item.taxId },
         });
         if (tax) {
-          lineTotal = lineTotal * ((100 + tax.rate) / 100);
+          lineTotal *= (100 + tax.rate) / 100;
         }
       }
 
       return {
-        productId: parseInt(item.productId),
+        productId: item.productId,
         quantity: item.quantity,
-        ...(item.discountId &&
-          item.discountId !== "" && {
-            discountId: parseInt(item.discountId),
-          }),
-        ...(item.taxId &&
-          item.taxId !== "" && {
-            taxId: parseInt(item.taxId),
-          }),
-        lineTotal: lineTotal.toFixed(2),
+        discountId: item.discountId || null,
+        taxId: item.taxId || null,
+        lineTotal: Number(lineTotal.toFixed(2)),
       };
     })
   );
 
+  const totalAmount = details.reduce((sum, item) => sum + item.lineTotal, 0);
+
+  // 🔹 Create the invoice
   const invoice = await prisma.invoice.create({
     data: {
       customerId: parseInt(customerId),
-      amount: details.reduce(
-        (sum, item) => sum + parseFloat(item.lineTotal),
-        0
-      ),
+      amount: details.reduce((sum, item) => sum + item.lineTotal, 0),
       status,
       createdById: dbUser.id,
       updatedById: dbUser.id,
+      number: invoiceNumber, // <-- 🧠 Assign custom invoice number
       InvoiceDetail: {
-        create: lineItems.map((item) => ({
-          productId: parseInt(item.productId),
-          quantity: item.quantity,
-          ...(item.discountId &&
-            item.discountId !== "" && {
-              discountId: parseInt(item.discountId),
-            }),
-          ...(item.taxId &&
-            item.taxId !== "" && {
-              taxId: parseInt(item.taxId),
-            }),
-          lineTotal: 0, // optionally calculate based on price * qty
-        })),
+        create: details,
       },
+    },
+  });
+
+  // 🔹 Increment counter for next invoice
+  await prisma.tenant.update({
+    where: { id: tenantId },
+    data: {
+      invoiceCounter: { increment: 1 },
     },
   });
 

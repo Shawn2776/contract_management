@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { InvoiceDataTable } from "@/components/tables/invoice-data-table/InvoiceDataTable";
+import { columns } from "@/components/tables/invoice-data-table/columns";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState([]);
@@ -9,24 +11,17 @@ export default function InvoicesPage() {
   useEffect(() => {
     fetch("/api/invoices")
       .then((res) => res.json())
-      .then(setInvoices);
+      .then((data) => {
+        const transformed = data.map((inv) => ({
+          id: inv.id,
+          status: inv.status,
+          amount: formatCurrency(inv.amount),
+          customer: inv.customer?.name || "Unknown",
+          createdAt: inv.createdAt,
+        }));
+        setInvoices(transformed);
+      });
   }, []);
 
-  return (
-    <div className="p-6 space-y-4">
-      <div className="grid gap-4">
-        {invoices.map((invoice) => (
-          <Card key={invoice.id} className="rounded-none shadow-md">
-            <CardHeader>
-              <CardTitle>Invoice #{invoice.id}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>Status: {invoice.status}</p>
-              <p>Amount: ${invoice.amount}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
+  return <InvoiceDataTable columns={columns} data={invoices} />;
 }
