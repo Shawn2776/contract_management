@@ -24,6 +24,7 @@ import {
 } from "@clerk/nextjs";
 import React from "react";
 import { ModeToggle } from "../theme/ModeToggle";
+import { isAdminUser } from "@/lib/auth/auth";
 
 const Navbar = () => {
   const { user, isLoaded } = useUser();
@@ -60,38 +61,37 @@ const Navbar = () => {
       {/* <div className="hidden md:flex text-4xl font-bold">{pathTitle}</div> */}
       <div>
         <div className="flex gap-2 pr-5">
-          {user?.publicMetadata?.role === "OWNER" ||
-            ("SUPER_ADMIN" && (
-              <Menubar>
-                <MenubarMenu>
-                  <MenubarTrigger>Owner Tools</MenubarTrigger>
-                  <MenubarContent>
-                    {/* You can add links to manage users, billing, etc. */}
-                    <MenubarItem>Invite team members</MenubarItem>
-                    <MenubarItem>Manage subscriptions</MenubarItem>
-                    <MenubarItem>See audit logs</MenubarItem>
-                  </MenubarContent>
-                </MenubarMenu>
-                <MenubarMenu>
-                  <MenubarTrigger>Pages</MenubarTrigger>
-                  <MenubarContent>
-                    {/* You can add links to manage users, billing, etc. */}
-                    <MenubarItem>
-                      <Link href="/dashboard">Home</Link>
-                    </MenubarItem>
-                    <MenubarItem>
-                      <Link href="/dashboard/invoices">Invoices</Link>
-                    </MenubarItem>
-                    <MenubarItem>
-                      <Link href="/dashboard/products">Products</Link>
-                    </MenubarItem>
-                    <MenubarItem>
-                      <Link href="/dashboard/customers">Customers</Link>
-                    </MenubarItem>
-                  </MenubarContent>
-                </MenubarMenu>
-              </Menubar>
-            ))}
+          {isAdminUser(user) && (
+            <Menubar>
+              <MenubarMenu>
+                <MenubarTrigger>Owner Tools</MenubarTrigger>
+                <MenubarContent>
+                  {/* You can add links to manage users, billing, etc. */}
+                  <MenubarItem>Invite team members</MenubarItem>
+                  <MenubarItem>Manage subscriptions</MenubarItem>
+                  <MenubarItem>See audit logs</MenubarItem>
+                </MenubarContent>
+              </MenubarMenu>
+              <MenubarMenu>
+                <MenubarTrigger>Pages</MenubarTrigger>
+                <MenubarContent>
+                  {/* You can add links to manage users, billing, etc. */}
+                  <MenubarItem>
+                    <Link href="/dashboard">Home</Link>
+                  </MenubarItem>
+                  <MenubarItem>
+                    <Link href="/dashboard/invoices">Invoices</Link>
+                  </MenubarItem>
+                  <MenubarItem>
+                    <Link href="/dashboard/products">Products</Link>
+                  </MenubarItem>
+                  <MenubarItem>
+                    <Link href="/dashboard/customers">Customers</Link>
+                  </MenubarItem>
+                </MenubarContent>
+              </MenubarMenu>
+            </Menubar>
+          )}
           <ModeToggle />
           <SignedOut className="flex items-center">
             <SignInButton className="hover:cursor-pointer hover:underline" />

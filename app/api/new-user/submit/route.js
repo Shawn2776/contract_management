@@ -20,13 +20,15 @@ export async function POST(req) {
 
   const prismaWithContext = prismaWithUser(dbUser.id);
 
-  // Create Tenant with correct userId (Prisma User.id!)
+  // ✅ Create Tenant and include email + website if present
   const tenant = await prismaWithContext.tenant.create({
     data: {
       name: body.legalBusinessName,
+      email: body.businessEmail,
+      website: body.businessWebsite,
       memberships: {
         create: {
-          userId: dbUser.id, // ✅ use Prisma user.id, NOT Clerk ID
+          userId: dbUser.id,
           role: "OWNER",
         },
       },

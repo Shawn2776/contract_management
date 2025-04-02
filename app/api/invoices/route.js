@@ -3,14 +3,20 @@ import prisma from "@/lib/prisma";
 import { z } from "zod";
 
 const invoiceSchema = z.object({
-  customerId: z.number(),
+  customerId: z.union([z.string(), z.number()]).transform(Number),
   status: z.string(),
   lineItems: z.array(
     z.object({
-      productId: z.number(),
+      productId: z.union([z.string(), z.number()]).transform(Number),
       quantity: z.number().min(1),
-      discountId: z.number().optional(),
-      taxId: z.number().optional(),
+      discountId: z
+        .union([z.string(), z.number()])
+        .nullable()
+        .transform((val) => (val ? Number(val) : null)),
+      taxId: z
+        .union([z.string(), z.number()])
+        .nullable()
+        .transform((val) => (val ? Number(val) : null)),
     })
   ),
 });
@@ -19,7 +25,6 @@ async function getUpdatedTenantCounter(tenant) {
   const currentYear = new Date().getFullYear();
 
   if (tenant.autoResetYearly && tenant.lastResetYear !== currentYear) {
-    // Reset counter
     await prisma.tenant.update({
       where: { id: tenant.id },
       data: {
@@ -76,16 +81,16 @@ export async function POST(req) {
   if (!tenantId) return new Response("No tenant found", { status: 400 });
 
   const body = await req.json();
-  const { customerId, status, lineItems } = body;
-
-  if (!customerId || !lineItems?.length) {
-    return new Response("Missing required fields", { status: 400 });
+  const parsed = invoiceSchema.safeParse(body);
+  if (!parsed.success) {
+    return new Response("Validation error", { status: 400 });
   }
+
+  const { customerId, status, lineItems } = parsed.data;
 
   const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
   tenant.invoiceCounter = await getUpdatedTenantCounter(tenant);
 
-  // 🔹 Generate invoice number
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -103,7 +108,6 @@ export async function POST(req) {
       const product = await prisma.product.findUnique({
         where: { id: item.productId },
       });
-
       if (!product) throw new Error("Product not found");
 
       let lineTotal = product.price * item.quantity;
@@ -129,8 +133,8 @@ export async function POST(req) {
       return {
         productId: item.productId,
         quantity: item.quantity,
-        discountId: item.discountId || null,
-        taxId: item.taxId || null,
+        discountId: item.discountId,
+        taxId: item.taxId,
         lineTotal: Number(lineTotal.toFixed(2)),
       };
     })
@@ -138,27 +142,23 @@ export async function POST(req) {
 
   const totalAmount = details.reduce((sum, item) => sum + item.lineTotal, 0);
 
-  // 🔹 Create the invoice
   const invoice = await prisma.invoice.create({
     data: {
-      customerId: parseInt(customerId),
-      amount: details.reduce((sum, item) => sum + item.lineTotal, 0),
+      customerId,
+      amount: totalAmount,
       status,
       createdById: dbUser.id,
       updatedById: dbUser.id,
-      number: invoiceNumber, // <-- 🧠 Assign custom invoice number
+      number: invoiceNumber,
       InvoiceDetail: {
         create: details,
       },
     },
   });
 
-  // 🔹 Increment counter for next invoice
   await prisma.tenant.update({
     where: { id: tenantId },
-    data: {
-      invoiceCounter: { increment: 1 },
-    },
+    data: { invoiceCounter: { increment: 1 } },
   });
 
   return Response.json(invoice, { status: 201 });

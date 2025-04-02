@@ -135,3 +135,18 @@
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out;
 }
+
+@media print {
+  button,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+  }
+
+  @page {
+    margin: 1in;
+  }
+}

@@ -114,7 +114,10 @@ export async function GET(req, { params }) {
     where: { id },
     include: {
       customer: true,
-      InvoiceDetail: true,
+      tenant: true,
+      InvoiceDetail: {
+        include: { Product: true },
+      },
     },
   });
 
