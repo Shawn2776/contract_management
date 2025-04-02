@@ -21,14 +21,14 @@ export default function InvoiceStatusDonut() {
 
   return (
     <div className="w-full max-w-md">
-      <ResponsiveContainer width="100%" height={250}>
+      <ResponsiveContainer width="100%" height={180}>
         <PieChart>
           <Pie
             data={data}
             cx="50%"
             cy="50%"
-            innerRadius={60}
-            outerRadius={90}
+            innerRadius={50}
+            outerRadius={80}
             dataKey="value"
             labelLine={false}
           >
