@@ -15,6 +15,7 @@ export default function InvoicesPage() {
         const transformed = data.map((inv) => ({
           id: inv.id,
           status: inv.status,
+          number: inv.number,
           amount: formatCurrency(inv.amount),
           customer: inv.customer?.name || "Unknown",
           createdAt: inv.createdAt,

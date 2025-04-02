@@ -41,7 +41,7 @@ export default function NewInvoicePage() {
         await Promise.all([
           customersRes.json(),
           productsRes.json(),
-          discountsRes.json(), // this is likely where it fails
+          discountsRes.json(),
           taxRatesRes.json(),
         ]);
 

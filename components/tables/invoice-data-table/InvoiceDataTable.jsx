@@ -21,6 +21,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 
+import { getSortedRowModel } from "@tanstack/react-table";
+
+import { rankItem } from "@tanstack/match-sorter-utils";
+
+const globalFilterFn = (row, columnId, filterValue) => {
+  const itemRank = rankItem(row.getValue(columnId), filterValue);
+  return itemRank.passed;
+};
+
 export function InvoiceDataTable({ columns, data }) {
   const [filter, setFilter] = React.useState("");
 
@@ -31,9 +40,11 @@ export function InvoiceDataTable({ columns, data }) {
       globalFilter: filter,
     },
     onGlobalFilterChange: setFilter,
+    globalFilterFn,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(), // ✅ THIS LINE IS REQUIRED
   });
 
   return (
@@ -50,13 +61,21 @@ export function InvoiceDataTable({ columns, data }) {
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                  <TableHead
+                    key={header.id}
+                    onClick={header.column.getToggleSortingHandler()}
+                    className="cursor-pointer select-none"
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                    {header.column.getCanSort() &&
+                      {
+                        asc: " 🔼",
+                        desc: " 🔽",
+                        false: " ⬍",
+                      }[header.column.getIsSorted() || "false"]}
                   </TableHead>
                 ))}
               </TableRow>
@@ -74,14 +93,19 @@ export function InvoiceDataTable({ columns, data }) {
                   }
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      onClick={(e) => e.stopPropagation()} // allow clicks inside cell content
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+                    <TableCell key={cell.id}>
+                      <div
+                        onClick={(e) => {
+                          const isButtonOrLink =
+                            e.target.closest("button, a, svg");
+                          if (isButtonOrLink) e.stopPropagation();
+                        }}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </div>
                     </TableCell>
                   ))}
                 </TableRow>

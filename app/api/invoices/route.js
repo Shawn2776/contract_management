@@ -144,12 +144,21 @@ export async function POST(req) {
 
   const invoice = await prisma.invoice.create({
     data: {
-      customerId,
+      number: invoiceNumber,
       amount: totalAmount,
       status,
-      createdById: dbUser.id,
-      updatedById: dbUser.id,
-      number: invoiceNumber,
+      createdBy: {
+        connect: { id: dbUser.id },
+      },
+      updatedBy: {
+        connect: { id: dbUser.id },
+      },
+      customer: {
+        connect: { id: customerId },
+      },
+      tenant: {
+        connect: { id: tenantId },
+      },
       InvoiceDetail: {
         create: details,
       },

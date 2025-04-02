@@ -32,12 +32,15 @@ export const columns = [
     enableHiding: false,
   },
   {
-    accessorKey: "id",
+    accessorKey: "number",
     header: "Invoice #",
+    enableSorting: true,
   },
+
   {
     accessorKey: "status",
     header: "Status",
+    enableSorting: true,
     cell: ({ row }) => (
       <Badge
         variant="outline"
@@ -49,20 +52,29 @@ export const columns = [
       </Badge>
     ),
   },
+
   {
     accessorKey: "amount",
     header: "Amount",
-    cell: ({ row }) => `${row.original.amount}`,
+    enableSorting: true,
+    accessorFn: (row) => parseFloat(row.amount.replace(/[^0-9.-]+/g, "")), // Sort by numeric value
+    cell: ({ row }) => row.original.amount,
   },
+
   {
     accessorKey: "customer",
     header: "Customer",
+    enableSorting: true,
   },
+
   {
     accessorKey: "createdAt",
     header: "Created",
+    enableSorting: true,
+    accessorFn: (row) => new Date(row.createdAt),
     cell: ({ row }) => format(new Date(row.original.createdAt), "PPP"),
   },
+
   {
     id: "actions",
     header: "Actions",
