@@ -17,9 +17,15 @@ export async function GET() {
     },
   });
 
-  const tenant = dbUser?.memberships[0]?.tenant;
+  const tenants =
+    dbUser?.memberships.map((m) => ({
+      id: m.tenant.id,
+      name: m.tenant.name,
+      slug: m.tenant.slug, // assume you have this
+      role: m.role,
+    })) ?? [];
 
-  return new Response(JSON.stringify(tenant ?? {}), {
+  return new Response(JSON.stringify(tenants), {
     headers: { "Content-Type": "application/json" },
   });
 }
