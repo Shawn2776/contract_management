@@ -45,7 +45,13 @@ export const columns = [
       <Badge
         variant="outline"
         className={`capitalize ${
-          row.original.status === "Paid" ? "text-green-600" : "text-yellow-600"
+          row.original.status === "Paid"
+            ? "text-green-600"
+            : row.original.status === "Overdue"
+            ? "text-red-600"
+            : row.original.status === "Pending"
+            ? "text-blue-600"
+            : "text-yellow-600"
         }`}
       >
         {row.original.status}

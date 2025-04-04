@@ -3,6 +3,7 @@
 import { format } from "date-fns";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { Mail, Globe } from "lucide-react";
+import PaymentTypeGrid from "./PaymentTypeGrid";
 
 export default function InvoiceLayout({ invoice }) {
   if (!invoice) return <div className="p-6">Loading...</div>;
@@ -97,22 +98,7 @@ export default function InvoiceLayout({ invoice }) {
       </div>
 
       {/* Payment Options */}
-      <div className="grid grid-cols-8 text-center text-xs border border-t-0">
-        {[
-          "CASH",
-          "CHECK",
-          "CHARGE",
-          "C.O.D.",
-          "ON ACCT.",
-          "PAID OUT",
-          "MDSE RETD",
-          "SOLD BY",
-        ].map((label, i) => (
-          <div key={i} className="border p-2">
-            {label}
-          </div>
-        ))}
-      </div>
+      <PaymentTypeGrid selected={invoice.paymentType} />
 
       {/* Line Items */}
       <table className="w-full border text-sm">

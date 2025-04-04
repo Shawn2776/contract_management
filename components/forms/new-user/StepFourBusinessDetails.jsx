@@ -55,7 +55,7 @@ const StepFourBusinessDetails = () => {
       addressLine2,
       zip,
       city,
-      state: selectedState,
+      businessState: selectedState, // ✅ FIXED
       businessEmail,
       isManualEntry,
       onlineStatus,
