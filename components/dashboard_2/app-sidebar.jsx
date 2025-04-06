@@ -15,16 +15,15 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { useUserInfo } from "@/lib/useUserInfo";
-
 import { usePathname } from "next/navigation";
 import { TeamSwitcher } from "./team-switcher";
 import { NavMain } from "./nav-main";
-import { NavUser } from "./nav-user";
+import { UserButton, useUser } from "@clerk/nextjs";
 
 export function AppSidebar(props) {
   const pathname = usePathname();
-  const user = useUserInfo();
-  console.log("Current pathname:", pathname);
+  const { user } = useUser(); // ✅ destructured properly now
+  const userInfo = useUserInfo();
 
   const navItems = [
     {
@@ -45,11 +44,9 @@ export function AppSidebar(props) {
       icon: Package,
       isActive: pathname.startsWith("/dashboard_2/products"),
     },
-    // etc.
   ];
 
-  // Role-based nav
-  if (user?.role === "OWNER") {
+  if (userInfo?.role === "OWNER") {
     navItems.push({
       title: "Team Management",
       url: "/dashboard_2/team",
@@ -70,10 +67,32 @@ export function AppSidebar(props) {
       <SidebarHeader>
         <TeamSwitcher />
       </SidebarHeader>
+
       <SidebarContent>
         <NavMain items={navItems} />
       </SidebarContent>
-      <SidebarFooter>{user && <NavUser user={user} />}</SidebarFooter>
+
+      <SidebarFooter className="mt-auto border-t border-border bg-sidebar px-4 py-3 relative overflow-hidden">
+        <div className="flex items-center gap-3 relative z-10">
+          <UserButton
+            afterSignOutUrl="/"
+            appearance={{
+              elements: {
+                userButtonAvatarBox: "h-9 w-9",
+              },
+            }}
+          />
+          <div className="text-sm absolute left-14 top-1 z-0 w-[180px] peer-data-[collapsed=true]/sidebar:opacity-0 peer-data-[collapsed=true]/sidebar:-z-10">
+            <p className="font-medium leading-none whitespace-nowrap">
+              {user?.firstName} {user?.lastName}
+            </p>
+            <p className="text-muted-foreground text-xs truncate">
+              {user?.primaryEmailAddress?.emailAddress}
+            </p>
+          </div>
+        </div>
+      </SidebarFooter>
+
       <SidebarRail />
     </Sidebar>
   );

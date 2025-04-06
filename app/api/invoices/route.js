@@ -1,10 +1,11 @@
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
+import { InvoiceStatus } from "@prisma/client";
 
 const invoiceSchema = z.object({
   customerId: z.union([z.string(), z.number()]).transform(Number),
-  status: z.string(),
+  status: z.enum(Object.keys(InvoiceStatus)),
   lineItems: z.array(
     z.object({
       productId: z.union([z.string(), z.number()]).transform(Number),
@@ -13,12 +14,11 @@ const invoiceSchema = z.object({
         .union([z.string(), z.number()])
         .nullable()
         .transform((val) => (val ? Number(val) : null)),
-      taxId: z
-        .union([z.string(), z.number()])
-        .nullable()
-        .transform((val) => (val ? Number(val) : null)),
     })
   ),
+  taxRateId: z.union([z.string(), z.number()]).nullable().optional(),
+  taxExempt: z.boolean().optional(),
+  taxExemptId: z.string().nullable().optional(),
 });
 
 async function getUpdatedTenantCounter(tenant) {
@@ -86,7 +86,11 @@ export async function POST(req) {
     return new Response("Validation error", { status: 400 });
   }
 
-  const { customerId, status, lineItems } = parsed.data;
+  const { customerId, status, lineItems, taxRateId, taxExempt, taxExemptId } =
+    parsed.data;
+  const taxRate = taxRateId
+    ? await prisma.taxRate.findUnique({ where: { id: Number(taxRateId) } })
+    : null;
 
   const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
   tenant.invoiceCounter = await getUpdatedTenantCounter(tenant);
@@ -121,20 +125,15 @@ export async function POST(req) {
         }
       }
 
-      if (item.taxId) {
-        const tax = await prisma.taxRate.findUnique({
-          where: { id: item.taxId },
-        });
-        if (tax) {
-          lineTotal *= (100 + tax.rate) / 100;
-        }
+      if (!taxExempt && taxRate) {
+        lineTotal *= (100 + taxRate.rate) / 100;
       }
 
       return {
         productId: item.productId,
         quantity: item.quantity,
         discountId: item.discountId,
-        taxId: item.taxId,
+        taxId: taxRate ? taxRate.id : null,
         lineTotal: Number(lineTotal.toFixed(2)),
       };
     })
@@ -146,7 +145,7 @@ export async function POST(req) {
     data: {
       number: invoiceNumber,
       amount: totalAmount,
-      status,
+      status: InvoiceStatus[status],
       createdBy: {
         connect: { id: dbUser.id },
       },

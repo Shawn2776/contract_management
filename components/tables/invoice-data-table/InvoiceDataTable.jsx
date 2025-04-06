@@ -24,6 +24,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { getSortedRowModel } from "@tanstack/react-table";
 
 import { rankItem } from "@tanstack/match-sorter-utils";
+import Link from "next/link";
 
 const globalFilterFn = (row, columnId, filterValue) => {
   const itemRank = rankItem(row.getValue(columnId), filterValue);
@@ -49,12 +50,21 @@ export function InvoiceDataTable({ columns, data }) {
 
   return (
     <div className="space-y-4">
-      <Input
-        placeholder="Search..."
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-        className="max-w-sm"
-      />
+      <div className="flex items-center justify-between">
+        <Input
+          placeholder="Search..."
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="max-w-sm"
+        />
+        <div>
+          <Link href="/dashboard_2/invoices/new">
+            <Button className="rounded-none shadow-md hover:cursor-pointer">
+              New Invoice
+            </Button>
+          </Link>
+        </div>
+      </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -89,7 +99,7 @@ export function InvoiceDataTable({ columns, data }) {
                   data-state={row.getIsSelected() && "selected"}
                   className="cursor-pointer hover:bg-muted/40"
                   onClick={() =>
-                    (window.location.href = `/dashboard/invoices/${row.original.id}`)
+                    (window.location.href = `/dashboard_2/invoices/${row.original.id}`)
                   }
                 >
                   {row.getVisibleCells().map((cell) => (

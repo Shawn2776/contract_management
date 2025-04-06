@@ -10,10 +10,6 @@ async function restoreInvoiceDetails() {
     },
   });
 
-  console.log(
-    `Found ${invoices.length} invoices. Rebuilding mock InvoiceDetail rows...`
-  );
-
   for (const invoice of invoices) {
     try {
       // Find products or assign one default for simplicity
@@ -37,14 +33,11 @@ async function restoreInvoiceDetails() {
           lineTotal: product.price,
         },
       });
-
-      console.log(`✅ Restored detail for invoice ${invoice.id}`);
     } catch (err) {
       console.error(`❌ Failed to restore invoice ${invoice.id}:`, err.message);
     }
   }
 
-  console.log("🎉 InvoiceDetails restoration complete!");
   await prisma.$disconnect();
 }
 

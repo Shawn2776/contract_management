@@ -10,7 +10,7 @@ export default function SuccessPage() {
 
         <div className="space-y-2">
           <a
-            href="/dashboard"
+            href="/dashboard_2"
             className="block w-full bg-primary text-white py-2 rounded hover:opacity-90"
           >
             Go to Dashboard

@@ -36,8 +36,8 @@ export function TeamSwitcher() {
 
   const handleSwitch = (team) => {
     setCurrentTeam(team);
-    const baseDomain = process.env.NEXT_PUBLIC_APP_DOMAIN || "rental.com";
-    window.location.href = `https://${team.slug}.${baseDomain}`;
+    localStorage.setItem("tenantId", team.id); // <-- save selected tenantId
+    location.reload(); // refresh to re-trigger data fetches
   };
 
   if (!currentTeam) return null;

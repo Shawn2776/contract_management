@@ -18,22 +18,34 @@ export default function NewInvoiceForm({
   products = [],
   discounts = [],
   taxRates = [],
+  statuses = [],
   onSubmit,
   loading,
 }) {
   const [selectedCustomer, setSelectedCustomer] = useState("");
-  const [status, setStatus] = useState("Pending");
+  const [status, setStatus] = useState("PENDING");
   const [lineItems, setLineItems] = useState([
-    { productId: "", quantity: 1, discountId: "", taxId: "" },
+    { productId: "", quantity: 1, discountId: "" },
   ]);
-
+  const [errors, setErrors] = useState({});
   const [customerList, setCustomerList] = useState([]);
-  const [productList, setProductList] = useState(products);
+  const [productList, setProductList] = useState([]);
+  const [isTaxExempt, setIsTaxExempt] = useState(false);
+  const [taxExemptId, setTaxExemptId] = useState("");
+  const [taxRate, setTaxRate] = useState("");
+
+  useEffect(() => {
+    setCustomerList(customers);
+  }, [customers]);
+
+  useEffect(() => {
+    setProductList(products);
+  }, [products]);
 
   const addLineItem = () => {
     setLineItems([
       ...lineItems,
-      { productId: "", quantity: 1, discountId: "", taxId: "" },
+      { productId: "", quantity: 1, discountId: "" },
     ]);
   };
 
@@ -43,36 +55,49 @@ export default function NewInvoiceForm({
     setLineItems(updated);
   };
 
+  const validate = () => {
+    const newErrors = {};
+    if (!selectedCustomer) newErrors.customer = "Customer is required.";
+    if (
+      lineItems.length === 0 ||
+      lineItems.some((item) => !item.productId || item.quantity < 1)
+    ) {
+      newErrors.lineItems = "At least one valid line item is required.";
+    }
+    if (!status) newErrors.status = "Status is required.";
+    if (!isTaxExempt && !taxRate) newErrors.taxRate = "Tax rate is required.";
+    if (isTaxExempt && !taxExemptId)
+      newErrors.taxExemptId = "Tax exemption ID is required.";
+    return newErrors;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length) {
+      setErrors(validationErrors);
+      return;
+    }
+    setErrors({});
     onSubmit({
       customerId: selectedCustomer,
       status,
       lineItems,
+      taxRateId: isTaxExempt ? null : taxRate,
+      taxExempt: isTaxExempt,
+      taxExemptId: isTaxExempt ? taxExemptId : null,
     });
   };
-
-  useEffect(() => {
-    if (Array.isArray(customers) && customers.length) {
-      setCustomerList(customers);
-    }
-  }, [customers]);
-
-  useEffect(() => {
-    if (Array.isArray(products) && products.length) {
-      setProductList(products);
-    }
-  }, [products]);
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-6 max-w-3xl mx-auto bg-white shadow-md rounded-lg p-6"
+      className="space-y-8 max-w-4xl mx-auto p-8 bg-muted/50 shadow-lg rounded-xl"
     >
-      <h2 className="text-xl font-semibold mb-4">New Invoice</h2>
+      <h2 className="text-2xl font-semibold mb-6">New Invoice</h2>
 
       <div>
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center justify-between mb-2">
           <label className="font-medium">Customer</label>
           <AddCustomerSheet
             onCustomerCreated={(newCustomer) => {
@@ -81,10 +106,7 @@ export default function NewInvoiceForm({
             }}
           />
         </div>
-        <Select
-          onValueChange={setSelectedCustomer}
-          value={String(selectedCustomer || "")}
-        >
+        <Select onValueChange={setSelectedCustomer} value={selectedCustomer}>
           <SelectTrigger>
             <SelectValue placeholder="Select customer" />
           </SelectTrigger>
@@ -96,11 +118,14 @@ export default function NewInvoiceForm({
             ))}
           </SelectContent>
         </Select>
+        {errors.customer && (
+          <p className="text-red-500 text-sm mt-1">{errors.customer}</p>
+        )}
       </div>
 
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <h3 className="font-medium">Line Items</h3>
+          <h3 className="text-lg font-medium">Line Items</h3>
           <AddProductSheet
             onProductCreated={(newProduct) =>
               setProductList((prev) => [...prev, newProduct])
@@ -109,7 +134,7 @@ export default function NewInvoiceForm({
         </div>
 
         {lineItems.map((item, idx) => (
-          <div key={idx} className="grid grid-cols-4 gap-4">
+          <div key={idx} className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <Select
               value={item.productId || ""}
               onValueChange={(val) => updateLineItem(idx, "productId", val)}
@@ -151,30 +176,69 @@ export default function NewInvoiceForm({
                 ))}
               </SelectContent>
             </Select>
-
-            <Select
-              value={item.taxId || ""}
-              onValueChange={(val) => updateLineItem(idx, "taxId", val)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Tax Rate" />
-              </SelectTrigger>
-              <SelectContent>
-                {taxRates.map((tax) => (
-                  <SelectItem key={tax.id} value={String(tax.id)}>
-                    {tax.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         ))}
+
+        {errors.lineItems && (
+          <p className="text-red-500 text-sm mt-1">{errors.lineItems}</p>
+        )}
 
         <Button type="button" onClick={addLineItem} variant="secondary">
           + Add Line Item
         </Button>
       </div>
 
+      {/* Tax Section */}
+      <div className="space-y-4 border-t pt-6">
+        <label className="text-lg font-medium">Tax Options</label>
+
+        <div className="flex items-center space-x-3">
+          <input
+            type="checkbox"
+            checked={isTaxExempt}
+            onChange={(e) => setIsTaxExempt(e.target.checked)}
+            id="taxExempt"
+            className="size-4"
+          />
+          <label htmlFor="taxExempt">Invoice is tax-exempt</label>
+        </div>
+
+        {isTaxExempt ? (
+          <div>
+            <label className="text-sm font-medium">Tax Exemption ID</label>
+            <Input
+              placeholder="Exemption Certificate or Business Tax ID"
+              value={taxExemptId}
+              onChange={(e) => setTaxExemptId(e.target.value)}
+              required
+            />
+            {errors.taxExemptId && (
+              <p className="text-red-500 text-sm mt-1">{errors.taxExemptId}</p>
+            )}
+          </div>
+        ) : (
+          <div>
+            <label className="text-sm font-medium">Apply Tax Rate</label>
+            <Select value={taxRate} onValueChange={setTaxRate}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select tax rate" />
+              </SelectTrigger>
+              <SelectContent>
+                {taxRates.map((tax) => (
+                  <SelectItem key={tax.id} value={String(tax.id)}>
+                    {tax.name} ({tax.rate}%)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.taxRate && (
+              <p className="text-red-500 text-sm mt-1">{errors.taxRate}</p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Status */}
       <div>
         <label className="font-medium">Status</label>
         <Select value={status} onValueChange={setStatus}>
@@ -182,14 +246,22 @@ export default function NewInvoiceForm({
             <SelectValue placeholder="Select status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Pending">Pending</SelectItem>
-            <SelectItem value="Paid">Paid</SelectItem>
-            <SelectItem value="Overdue">Overdue</SelectItem>
+            {statuses.map((s) => (
+              <SelectItem key={s} value={s}>
+                {s
+                  .replace(/_/g, " ")
+                  .toLowerCase()
+                  .replace(/^\w/, (c) => c.toUpperCase())}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
+        {errors.status && (
+          <p className="text-red-500 text-sm mt-1">{errors.status}</p>
+        )}
       </div>
 
-      <div className="pt-4 text-right">
+      <div className="pt-6 text-right">
         <Button type="submit" disabled={loading}>
           {loading ? "Creating..." : "Create Invoice"}
         </Button>

@@ -9,8 +9,65 @@ export default function NewInvoicePage() {
   const [products, setProducts] = useState([]);
   const [discounts, setDiscounts] = useState([]);
   const [taxRates, setTaxRates] = useState([]);
+  const [statuses, setStatuses] = useState([]);
 
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [
+          customersRes,
+          productsRes,
+          discountsRes,
+          taxRatesRes,
+          statusRes,
+        ] = await Promise.all([
+          fetch("/api/customers"),
+          fetch("/api/products"),
+          fetch("/api/discounts"),
+          fetch("/api/tax-rates"),
+          fetch("/api/enums/invoice-status"),
+        ]);
+
+        const checkAndParse = async (res) => {
+          if (!res.ok) {
+            const errText = await res.text();
+            console.error("Fetch error:", res.status, errText);
+            throw new Error(
+              `Failed to fetch from ${res.url || "unknown"}: ${res.status}`
+            );
+          }
+          const text = await res.text();
+          return text ? JSON.parse(text) : [];
+        };
+
+        const [
+          customersData,
+          productsData,
+          discountsData,
+          taxRatesData,
+          statusesData,
+        ] = await Promise.all([
+          checkAndParse(customersRes),
+          checkAndParse(productsRes),
+          checkAndParse(discountsRes),
+          checkAndParse(taxRatesRes),
+          checkAndParse(statusRes),
+        ]);
+
+        setCustomers(customersData);
+        setProducts(productsData);
+        setDiscounts(discountsData);
+        setTaxRates(taxRatesData);
+        setStatuses(statusesData);
+      } catch (err) {
+        console.error("Error loading form data:", err);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleCreateInvoice = async (data) => {
     const res = await fetch("/api/invoices", {
@@ -20,39 +77,11 @@ export default function NewInvoicePage() {
     });
 
     if (res.ok) {
-      // Redirect or show success
       router.push("/dashboard/invoices");
     } else {
       alert("Failed to create invoice");
     }
   };
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const [customersRes, productsRes, discountsRes, taxRatesRes] =
-        await Promise.all([
-          fetch("/api/customers"),
-          fetch("/api/products"),
-          fetch("/api/discounts"),
-          fetch("/api/tax-rates"),
-        ]);
-
-      const [customersData, productsData, discountsData, taxRatesData] =
-        await Promise.all([
-          customersRes.json(),
-          productsRes.json(),
-          discountsRes.json(),
-          taxRatesRes.json(),
-        ]);
-
-      setCustomers(customersData);
-      setProducts(productsData);
-      setDiscounts(discountsData);
-      setTaxRates(taxRatesData);
-    };
-
-    fetchData();
-  }, []);
 
   return (
     <NewInvoiceForm
@@ -60,6 +89,7 @@ export default function NewInvoicePage() {
       products={products}
       discounts={discounts}
       taxRates={taxRates}
+      statuses={statuses}
       onSubmit={handleCreateInvoice}
     />
   );

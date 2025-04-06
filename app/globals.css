@@ -150,3 +150,13 @@
     margin: 1in;
   }
 }
+
+/* When the sidebar is expanded (data-collapsed="false") */
+[data-collapsed="false"] .sidebar-expanded\:block {
+  display: block;
+}
+
+/* When the sidebar is collapsed (data-collapsed="true") */
+[data-collapsed="true"] .sidebar-expanded\:block {
+  display: none;
+}

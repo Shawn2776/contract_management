@@ -13,8 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function AddCustomerSheet({ onCustomerCreated }) {
-  const [loading, setLoading] = useState(false);
-
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -22,31 +20,53 @@ export default function AddCustomerSheet({ onCustomerCreated }) {
     phone: "",
     address: "",
   });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) =>
+  const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const validate = () => {
+    const errs = {};
+    if (!form.name.trim()) errs.name = "Name is required.";
+    if (!form.email.trim()) errs.email = "Email is required.";
+    if (!form.phone.trim()) errs.phone = "Phone is required.";
+    return errs;
+  };
 
   const handleSubmit = async (e) => {
-    e.stopPropagation();
     e.preventDefault();
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length) {
+      setErrors(validationErrors);
+      return;
+    }
+
     setLoading(true);
+    setErrors({});
 
-    const res = await fetch("/api/customers", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
+    try {
+      const res = await fetch("/api/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
 
-    if (res.ok) {
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || "Failed to create customer.");
+      }
+
       const customer = await res.json();
       onCustomerCreated?.(customer);
       setForm({ name: "", email: "", phone: "", address: "" });
       setOpen(false);
-    } else {
-      alert("Error creating customer");
+    } catch (err) {
+      setErrors({ form: err.message });
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -63,25 +83,24 @@ export default function AddCustomerSheet({ onCustomerCreated }) {
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
             <Label htmlFor="name">Name</Label>
-            <Input
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              required
-            />
+            <Input name="name" value={form.name} onChange={handleChange} />
+            {errors.name && (
+              <p className="text-sm text-red-500">{errors.name}</p>
+            )}
           </div>
           <div>
             <Label htmlFor="email">Email</Label>
-            <Input
-              name="email"
-              type="email"
-              value={form.email}
-              onChange={handleChange}
-            />
+            <Input name="email" value={form.email} onChange={handleChange} />
+            {errors.email && (
+              <p className="text-sm text-red-500">{errors.email}</p>
+            )}
           </div>
           <div>
             <Label htmlFor="phone">Phone</Label>
             <Input name="phone" value={form.phone} onChange={handleChange} />
+            {errors.phone && (
+              <p className="text-sm text-red-500">{errors.phone}</p>
+            )}
           </div>
           <div>
             <Label htmlFor="address">Address</Label>
@@ -91,6 +110,7 @@ export default function AddCustomerSheet({ onCustomerCreated }) {
               onChange={handleChange}
             />
           </div>
+          {errors.form && <p className="text-sm text-red-500">{errors.form}</p>}
           <div className="pt-4 flex justify-end">
             <Button type="submit" disabled={loading}>
               {loading ? "Saving..." : "Save"}

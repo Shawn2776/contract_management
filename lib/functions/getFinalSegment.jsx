@@ -10,7 +10,12 @@ const useFinalSegment = (path) => {
     const lastPart = parts[parts.length - 1];
 
     // Handle /dashboard/invoices/[invoiceId]
-    if (parts.includes("invoices") && lastPart && parts.length > 2) {
+    if (
+      parts.includes("invoices") &&
+      lastPart &&
+      parts.length > 2 &&
+      lastPart !== "new"
+    ) {
       const fetchInvoice = async () => {
         try {
           const res = await fetch(`/api/invoices/${lastPart}`);
