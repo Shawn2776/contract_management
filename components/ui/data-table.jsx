@@ -26,8 +26,6 @@ export function DataTable({ columns, data }) {
   const [isListView, setIsListView] = useState(true); // New state for list view
   const [isCardView, setIsCardView] = useState(false); // New state for card view
 
-  console.log("🧾 Raw DataTable props:", { data });
-
   const filteredData = data.filter((row) =>
     columns.some((col) =>
       String(row[col.accessorKey] || "")

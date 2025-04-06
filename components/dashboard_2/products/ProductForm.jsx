@@ -15,7 +15,7 @@ export function ProductForm({ tenantId, onSuccess }) {
   const [previewUrl, setPreviewUrl] = useState(null);
 
   if (!isSignedIn) {
-    return <p>Loading authentication...</p>; // or a spinner
+    return <p>Loading authentication...</p>;
   }
 
   const handleImageChange = (e) => {
@@ -68,21 +68,6 @@ export function ProductForm({ tenantId, onSuccess }) {
             step="0.01"
             {...register("price", { required: true })}
           />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <Label htmlFor="sku">SKU</Label>
-          <Input id="sku" {...register("sku")} />
-        </div>
-        <div>
-          <Label htmlFor="barcode">Barcode</Label>
-          <Input id="barcode" {...register("barcode")} />
-        </div>
-        <div>
-          <Label htmlFor="qrCodeUrl">QR Code URL</Label>
-          <Input id="qrCodeUrl" {...register("qrCodeUrl")} />
         </div>
       </div>
 

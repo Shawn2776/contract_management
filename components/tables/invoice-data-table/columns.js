@@ -93,7 +93,7 @@ export const columns = [
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem asChild>
-            <Link href={`/dashboard/invoices/${row.original.id}`}>View</Link>
+            <Link href={`/dashboard_2/invoices/${row.original.id}`}>View</Link>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => alert(`Edit ${row.original.id}`)}>
             Edit

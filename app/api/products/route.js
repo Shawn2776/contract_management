@@ -1,6 +1,10 @@
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { customAlphabet } from "nanoid";
+
+const generateSku = customAlphabet("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", 8);
+const generateBarcode = customAlphabet("0123456789", 12);
 
 export async function GET() {
   const user = await currentUser();
@@ -56,9 +60,9 @@ export async function POST(req) {
   const {
     name,
     price,
-    sku,
-    barcode,
-    qrCodeUrl,
+    sku, // can still be submitted manually
+    barcode, // optional
+    qrCodeUrl, // optional
     imageUrl,
     description,
     variant,
@@ -67,19 +71,26 @@ export async function POST(req) {
 
   const parsedSpecs = specs ? JSON.parse(specs) : undefined;
 
+  const generatedSku = sku || generateSku(); // fallback if not passed
+  const generatedBarcode = barcode || generateBarcode();
+  const generatedQrUrl =
+    qrCodeUrl ||
+    `https://api.qrserver.com/v1/create-qr-code/?data=${generatedBarcode}&size=150x150`;
+
   const product = await prisma.product.create({
     data: {
       name,
       price: Number(price),
-      sku,
-      barcode,
-      qrCodeUrl,
+      sku: generatedSku,
+      barcode: generatedBarcode,
+      qrCodeUrl: generatedQrUrl,
       imageUrl,
       description,
+      variant,
       tenantId,
       createdById: dbUser.id,
       updatedById: dbUser.id,
-      // optionally store parsedSpecs if it's a column like `specs: parsedSpecs`
+      // optionally: specs,
     },
   });
 

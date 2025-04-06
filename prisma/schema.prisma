@@ -103,6 +103,7 @@ model Product {
   name      String  @db.VarChar(100)
   price     Decimal @db.Decimal(10, 2)
   imageUrl  String?
+  variant   String?
   sku       String? @db.VarChar(50)
   barcode   String? @db.VarChar(100)
   qrCodeUrl String?
